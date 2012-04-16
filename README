@@ -1,0 +1,4 @@
+In order to use this patch, first download simplesim-3.0 (make sure its named like this) change directories to the
+directory that contains simplesim-3.0.  Download the patch to that directory.  
+
+Run the following at the terminal: patch -p0 -i simplesim3_OSX.patch 
