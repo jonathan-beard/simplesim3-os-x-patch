@@ -1,0 +1,280 @@
+Common subdirectories: ../simplesim-3.0/config and simplesim-3.0/config
+Common subdirectories: ../simplesim-3.0/libexo and simplesim-3.0/libexo
+diff -c ../simplesim-3.0/syscall.c simplesim-3.0/syscall.c
+*** ../simplesim-3.0/syscall.c	2011-03-11 23:57:48.000000000 -0600
+--- simplesim-3.0/syscall.c	2012-02-18 19:21:52.000000000 -0600
+***************
+*** 95,101 ****
+  #ifndef _MSC_VER
+  #include <sys/ioctl.h>
+  #endif
+! #if defined(__FreeBSD__)
+  #include <utime.h>
+  #include <dirent.h>
+  #endif
+--- 95,104 ----
+  #ifndef _MSC_VER
+  #include <sys/ioctl.h>
+  #endif
+! #if (__FreeBSD__ == 1 || __APPLE__ == 1)
+! #ifdef __DARWIN_64_BIT_INO_T
+! #undef __DARWIN_64_BIT_INO_T
+! #endif
+  #include <utime.h>
+  #include <dirent.h>
+  #endif
+***************
+*** 123,133 ****
+  #include <netinet/in.h>
+  #endif /* linux */
+  
+! #ifdef __FreeBSD__
+  #include <netinet/tcp.h>
+  #include <netinet/udp.h>
+  #include <netinet/in.h>
+! #endif /* __FreeBSD__ */
+  
+  #if defined(__svr4__)
+  #include <sys/dirent.h>
+--- 126,136 ----
+  #include <netinet/in.h>
+  #endif /* linux */
+  
+! #if (__FreeBSD__ == 1 || __APPLE__ == 1)
+  #include <netinet/tcp.h>
+  #include <netinet/udp.h>
+  #include <netinet/in.h>
+! #endif /* __FreeBSD__ && __APPLE__ */
+  
+  #if defined(__svr4__)
+  #include <sys/dirent.h>
+***************
+*** 184,190 ****
+  #undef CR0
+  #endif
+  
+! #ifdef __FreeBSD__
+  #include <termios.h>
+  /*#include <sys/ioctl_compat.h>*/
+  #else
+--- 187,193 ----
+  #undef CR0
+  #endif
+  
+! #if (__FreeBSD__ == 1 || __APPLE__ == 1)
+  #include <termios.h>
+  /*#include <sys/ioctl_compat.h>*/
+  #else
+***************
+*** 834,840 ****
+  
+  struct xlate_table_t socklevel_map[] =
+  {
+! #if defined(__svr4__) || defined(__osf__) || defined(__FreeBSD__)
+    { OSF_SOL_SOCKET,	SOL_SOCKET },
+    { OSF_SOL_IP,		IPPROTO_IP },
+    { OSF_SOL_TCP,	IPPROTO_TCP },
+--- 837,843 ----
+  
+  struct xlate_table_t socklevel_map[] =
+  {
+! #if defined(__svr4__) || defined(__osf__) || defined(__FreeBSD__) || defined(__APPLE__)
+    { OSF_SOL_SOCKET,	SOL_SOCKET },
+    { OSF_SOL_IP,		IPPROTO_IP },
+    { OSF_SOL_TCP,	IPPROTO_TCP },
+***************
+*** 927,932 ****
+--- 930,936 ----
+  	    md_inst_t inst,		/* system call inst */
+  	    int traceable)		/* traceable system call? */
+  {
++   FILE *err_stream = stdout;
+    qword_t syscode = regs->regs_R[MD_REG_V0];
+  
+    /* fix for syscall() which uses CALL_PAL CALLSYS for making system calls */
+***************
+*** 1412,1425 ****
+  	addr = ld_brk_point + delta;
+  
+  	if (verbose)
+! 	  myfprintf(stderr, "SYS_sbrk: delta: 0x%012p (%ld)\n", delta, delta);
+  
+  	ld_brk_point = addr;
+  	regs->regs_R[MD_REG_V0] = ld_brk_point;
+  	regs->regs_R[MD_REG_A3] = 0;
+  
+  	if (verbose)
+! 	  myfprintf(stderr, "ld_brk_point: 0x%012p\n", ld_brk_point);
+  
+  #if 0
+  	/* check whether heap area has merged with stack area */
+--- 1416,1429 ----
+  	addr = ld_brk_point + delta;
+  
+  	if (verbose)
+! 	  myfprintf(err_stream, "SYS_sbrk: delta: 0x%012p (%ld)\n", delta, delta);
+  
+  	ld_brk_point = addr;
+  	regs->regs_R[MD_REG_V0] = ld_brk_point;
+  	regs->regs_R[MD_REG_A3] = 0;
+  
+  	if (verbose)
+! 	  myfprintf(err_stream, "ld_brk_point: 0x%012p\n", ld_brk_point);
+  
+  #if 0
+  	/* check whether heap area has merged with stack area */
+***************
+*** 1448,1461 ****
+          addr = /*base*/regs->regs_R[MD_REG_A0];
+  
+  	if (verbose)
+! 	  myfprintf(stderr, "SYS_obreak: addr: 0x%012p\n", addr);
+  
+  	ld_brk_point = addr;
+  	regs->regs_R[MD_REG_V0] = ld_brk_point;
+  	regs->regs_R[MD_REG_A3] = 0;
+  
+  	if (verbose)
+! 	  myfprintf(stderr, "ld_brk_point: 0x%012p\n", ld_brk_point);
+        }
+        break;
+  
+--- 1452,1465 ----
+          addr = /*base*/regs->regs_R[MD_REG_A0];
+  
+  	if (verbose)
+! 	  myfprintf(err_stream, "SYS_obreak: addr: 0x%012p\n", addr);
+  
+  	ld_brk_point = addr;
+  	regs->regs_R[MD_REG_V0] = ld_brk_point;
+  	regs->regs_R[MD_REG_A3] = 0;
+  
+  	if (verbose)
+! 	  myfprintf(err_stream, "ld_brk_point: 0x%012p\n", ld_brk_point);
+        }
+        break;
+  
+***************
+*** 1751,1757 ****
+  		      &arg, sizeof(arg));
+  
+  #ifdef NOTNOW
+! 	    fprintf(stderr, "FIONBIO: %d, %d\n",
+  		    (int)regs->regs_R[MD_REG_A0],
+  		    arg);
+  #endif
+--- 1755,1761 ----
+  		      &arg, sizeof(arg));
+  
+  #ifdef NOTNOW
+! 	    fprintf(err_stream, "FIONBIO: %d, %d\n",
+  		    (int)regs->regs_R[MD_REG_A0],
+  		    arg);
+  #endif
+***************
+*** 2256,2262 ****
+  	mem_bcopy(mem_fn, mem, Write, /*rusage*/regs->regs_R[MD_REG_A1],
+  		  &rusage, sizeof(struct osf_rusage));
+        }
+! #elif defined(__unix__)
+        {
+  	struct rusage local_rusage;
+  	struct osf_rusage rusage;
+--- 2260,2266 ----
+  	mem_bcopy(mem_fn, mem, Write, /*rusage*/regs->regs_R[MD_REG_A1],
+  		  &rusage, sizeof(struct osf_rusage));
+        }
+! #elif (__unix__ == 1 || __APPLE__ == 1)
+        {
+  	struct rusage local_rusage;
+  	struct osf_rusage rusage;
+***************
+*** 2333,2339 ****
+  #elif defined(_MSC_VER)
+              /* no utimes() in MSC, use utime() instead */
+  	    /*result*/regs->regs_R[MD_REG_V0] = utime(buf, NULL);
+! #elif defined(__svr4__) || defined(__USLC__) || defined(unix) || defined(_AIX) || defined(__alpha)
+  	    /*result*/regs->regs_R[MD_REG_V0] = utimes(buf, NULL);
+  #elif defined(__CYGWIN32__)
+  	    warn("syscall: called utimes\n");
+--- 2337,2343 ----
+  #elif defined(_MSC_VER)
+              /* no utimes() in MSC, use utime() instead */
+  	    /*result*/regs->regs_R[MD_REG_V0] = utime(buf, NULL);
+! #elif defined(__APPLE__) || defined(__svr4__) || defined(__USLC__) || defined(unix) || defined(_AIX) || defined(__alpha)
+  	    /*result*/regs->regs_R[MD_REG_V0] = utimes(buf, NULL);
+  #elif defined(__CYGWIN32__)
+  	    warn("syscall: called utimes\n");
+***************
+*** 2380,2386 ****
+  
+                /* result */regs->regs_R[MD_REG_V0] = utime(buf, &ubuf);
+              }
+! #elif defined(__USLC__) || defined(unix) || defined(_AIX) || defined(__alpha)
+  	    /* result */regs->regs_R[MD_REG_V0] = utimes(buf, tval);
+  #elif defined(__CYGWIN32__)
+  	    warn("syscall: called utimes\n");
+--- 2384,2390 ----
+  
+                /* result */regs->regs_R[MD_REG_V0] = utime(buf, &ubuf);
+              }
+! #elif defined(__APPLE__) || defined(__USLC__) || defined(unix) || defined(_AIX) || defined(__alpha)
+  	    /* result */regs->regs_R[MD_REG_V0] = utimes(buf, tval);
+  #elif defined(__CYGWIN32__)
+  	    warn("syscall: called utimes\n");
+***************
+*** 2618,2624 ****
+  	base = lseek ((int)fd, (off_t)0, SEEK_CUR);
+  	regs->regs_R[MD_REG_V0] =
+  	  getdents((int)fd, (struct dirent *)buf, (size_t)osf_nbytes);
+! #else /* !__svr4__ */
+  	regs->regs_R[MD_REG_V0] =
+  	  getdirentries((int)fd, buf, (size_t)osf_nbytes, &base);
+  #endif
+--- 2622,2628 ----
+  	base = lseek ((int)fd, (off_t)0, SEEK_CUR);
+  	regs->regs_R[MD_REG_V0] =
+  	  getdents((int)fd, (struct dirent *)buf, (size_t)osf_nbytes);
+! #else/* !__svr4__ */
+  	regs->regs_R[MD_REG_V0] =
+  	  getdirentries((int)fd, buf, (size_t)osf_nbytes, &base);
+  #endif
+***************
+*** 3445,3451 ****
+  
+      case OSF_SYS_usleep_thread:
+  #if 0
+!       fprintf(stderr, "usleep(%d)\n", (unsigned int)regs->regs_R[MD_REG_A0]);
+  #endif
+  #ifdef alpha
+        regs->regs_R[MD_REG_V0] = usleep((unsigned int)regs->regs_R[MD_REG_A0]);
+--- 3449,3455 ----
+  
+      case OSF_SYS_usleep_thread:
+  #if 0
+!       fprintf(err_stream, "usleep(%d)\n", (unsigned int)regs->regs_R[MD_REG_A0]);
+  #endif
+  #ifdef alpha
+        regs->regs_R[MD_REG_V0] = usleep((unsigned int)regs->regs_R[MD_REG_A0]);
+***************
+*** 3514,3520 ****
+      }
+  
+    if (verbose)
+!     fprintf(stderr, "syscall(%d): returned %d:%d...\n",
+              (int)syscode, (int)regs->regs_R[MD_REG_A3],
+              (int)regs->regs_R[MD_REG_V0]);
+  }
+--- 3518,3524 ----
+      }
+  
+    if (verbose)
+!     fprintf(err_stream, "syscall(%d): returned %d:%d...\n",
+              (int)syscode, (int)regs->regs_R[MD_REG_A3],
+              (int)regs->regs_R[MD_REG_V0]);
+  }
+Common subdirectories: ../simplesim-3.0/target-alpha and simplesim-3.0/target-alpha
+Common subdirectories: ../simplesim-3.0/target-pisa and simplesim-3.0/target-pisa
+Common subdirectories: ../simplesim-3.0/tests and simplesim-3.0/tests
+Common subdirectories: ../simplesim-3.0/tests-alpha and simplesim-3.0/tests-alpha
+Common subdirectories: ../simplesim-3.0/tests-pisa and simplesim-3.0/tests-pisa
